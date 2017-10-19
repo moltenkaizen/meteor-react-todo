@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-import PropTypes from 'prop-types'
+import { Meteor } from 'meteor/meteor';
+import PropTypes from 'prop-types';
 import { createContainer } from 'meteor/react-meteor-data';
 import { Tasks } from '../api/tasks.js';
 import Task from './Task.jsx';
@@ -24,6 +25,8 @@ class App extends Component {
     Tasks.insert({
       text,
       createdAt: new Date(), // current time
+      owner: Meteor.userId(),
+      username: Meteor.user().username,
     });
 
     // Clear form
@@ -60,13 +63,15 @@ class App extends Component {
             Hide Completed Tasks
           </label>
           <AccountsUIWrapper />
-          <form className="new-task" onSubmit={this.handleSubmit.bind(this)} >
-            <input
-              type="text"
-              ref="textInput"
-              placeholder="Type to add new tasks"
-            />
-          </form>
+          { this.props.currentUser ?
+            <form className="new-task" onSubmit={this.handleSubmit.bind(this)} >
+              <input
+                type="text"
+                ref="textInput"
+                placeholder="Type to add new tasks"
+              />
+            </form> : ''
+          }
         </header>
 
         <ul>
@@ -80,11 +85,13 @@ class App extends Component {
 App.propTypes = {
   tasks: PropTypes.array.isRequired,
   incompleteCount: PropTypes.number.isRequired,
+  currentUser: PropTypes.object,
 };
 
 export default createContainer(() => {
   return {
-    tasks: Tasks.find({}, { sort: { createdAt: -1 } }).fetch(),
+    tasks: Tasks.find({ }, { sort: { createdAt: -1 } }).fetch(),
     incompleteCount: Tasks.find({ checked: { $ne: true } }).count(),
+    currentUser: Meteor.user(),
   };
 }, App);
